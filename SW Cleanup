@@ -1,151 +1,104 @@
 @echo off
 title SW CLEANUP - System Cleaner
-mode con cols=82 lines=40
 color 0B
+mode con cols=80 lines=35
 
-:: Enable delayed expansion
-setlocal EnableDelayedExpansion
-
-:: ==============================================
-:: HEADER
-:: ==============================================
-cls
 echo.
-echo   ███████╗██╗    ██╗     ██████╗██╗     ███████╗ █████╗ ███╗   ██╗██╗   ██╗██████╗ 
-echo   ██╔════╝██║    ██║    ██╔════╝██║     ██╔════╝██╔══██╗████╗  ██║██║   ██║██╔══██╗
-echo   ███████╗██║ █╗ ██║    ██║     ██║     █████╗  ███████║██╔██╗ ██║██║   ██║██████╔╝
-echo   ╚════██║██║███╗██║    ██║     ██║     ██╔══╝  ██╔══██║██║╚██╗██║██║   ██║██╔═══╝ 
-echo   ███████║╚███╔███╔╝    ╚██████╗███████╗███████╗██║  ██║██║ ╚████║╚██████╔╝██║     
-echo   ╚══════╝ ╚══╝╚══╝      ╚═════╝╚══════╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═══╝ ╚═════╝ ╚═╝     
+echo   ======================================================
+echo                    S W   C L E A N U P
+echo                 System Cleanup Utility
+echo   ======================================================
 echo.
-echo   ==============================================================
-echo                    SYSTEM CLEANUP UTILITY
-echo   ==============================================================
+echo   Starting cleanup process...
 echo.
 timeout /t 2 >nul
 
-:: ==============================================
-:: CHECK FREE SPACE BEFORE
-:: ==============================================
+::---------------------------------------------
+:: Get Free Space Before
+::---------------------------------------------
 echo   [INFO] Checking free space on C: drive...
-echo.
-for /f "tokens=2 delims==" %%a in ('wmic logicaldisk where "DeviceID='C:'" get FreeSpace /value') do set FreeBefore=%%a
-set /a FreeBeforeMB=%FreeBefore:~0,-6%
-echo   Free Space before cleanup : !FreeBeforeMB! MB
-echo.
-timeout /t 2 >nul
-
-:: ==============================================
-:: 1. DELETE TEMP FILES
-:: ==============================================
-echo   [1/5] Deleting Temporary Files...
-echo         - Cleaning User Temp folder...
-del /s /f /q "%temp%\*.*" >nul 2>&1
-rd /s /q "%temp%" >nul 2>&1
-md "%temp%" >nul 2>&1
-
-echo         - Cleaning Windows Temp folder...
-del /s /f /q "C:\Windows\Temp\*.*" >nul 2>&1
-rd /s /q "C:\Windows\Temp" >nul 2>&1
-md "C:\Windows\Temp" >nul 2>&1
-
-echo         - Cleaning Prefetch...
-del /s /f /q "C:\Windows\Prefetch\*.*" >nul 2>&1
-echo   [OK] Temporary files cleaned.
+for /f "tokens=3" %%a in ('dir /-c C:\ ^| find "bytes free"') do set FreeBefore=%%a
+echo   Free Space before cleanup: %FreeBefore% bytes
 echo.
 timeout /t 1 >nul
 
-:: ==============================================
-:: 2. EMPTY RECYCLE BIN
-:: ==============================================
+::---------------------------------------------
+:: 1. Delete Temp Files
+::---------------------------------------------
+echo   [1/5] Deleting Temporary Files...
+echo         Cleaning User Temp folder...
+del /s /f /q "%temp%\*.*" >nul 2>&1
+echo         Cleaning Windows Temp folder...
+del /s /f /q "C:\Windows\Temp\*.*" >nul 2>&1
+echo         Cleaning Prefetch...
+del /s /f /q "C:\Windows\Prefetch\*.*" >nul 2>&1
+echo   [OK] Temporary files deleted.
+echo.
+timeout /t 1 >nul
+
+::---------------------------------------------
+:: 2. Empty Recycle Bin
+::---------------------------------------------
 echo   [2/5] Emptying Recycle Bin...
 rd /s /q C:\$Recycle.Bin >nul 2>&1
 echo   [OK] Recycle Bin emptied.
 echo.
 timeout /t 1 >nul
 
-:: ==============================================
-:: 3. TEMPORARY INTERNET FILES
-:: ==============================================
+::---------------------------------------------
+:: 3. Temporary Internet Files
+::---------------------------------------------
 echo   [3/5] Cleaning Temporary Internet Files...
-RunDll32.exe InetCpl.cpl,ClearMyTracksByProcess 8 >nul 2>&1
 del /s /f /q "%LocalAppData%\Microsoft\Windows\INetCache\*.*" >nul 2>&1
 echo   [OK] Temporary Internet Files cleaned.
 echo.
 timeout /t 1 >nul
 
-:: ==============================================
-:: 4. BROWSER CLEANUP (Chrome + Firefox + IE)
-:: ==============================================
+::---------------------------------------------
+:: 4. Browser Cleanup
+::---------------------------------------------
 echo   [4/5] Cleaning Browser Data...
 echo.
 
-:: --- Internet Explorer ---
 echo         - Cleaning Internet Explorer...
 RunDll32.exe InetCpl.cpl,ClearMyTracksByProcess 255 >nul 2>&1
-del /s /f /q "%LocalAppData%\Microsoft\Windows\History\*.*" >nul 2>&1
-del /s /f /q "%LocalAppData%\Microsoft\Windows\INetCookies\*.*" >nul 2>&1
-echo           IE History + Cache cleaned.
+echo           IE cleaned.
 
-:: --- Google Chrome ---
 echo         - Cleaning Google Chrome...
 taskkill /F /IM chrome.exe >nul 2>&1
 timeout /t 1 >nul
 del /s /f /q "%LocalAppData%\Google\Chrome\User Data\Default\Cache\*.*" >nul 2>&1
 del /s /f /q "%LocalAppData%\Google\Chrome\User Data\Default\Code Cache\*.*" >nul 2>&1
 del /s /f /q "%LocalAppData%\Google\Chrome\User Data\Default\History*" >nul 2>&1
-del /s /f /q "%LocalAppData%\Google\Chrome\User Data\Default\Cookies*" >nul 2>&1
-del /s /f /q "%LocalAppData%\Google\Chrome\User Data\Default\Web Data*" >nul 2>&1
-echo           Chrome Cache + History cleaned.
+echo           Chrome cleaned.
 
-:: --- Mozilla Firefox ---
 echo         - Cleaning Mozilla Firefox...
 taskkill /F /IM firefox.exe >nul 2>&1
 timeout /t 1 >nul
 for /d %%i in ("%AppData%\Mozilla\Firefox\Profiles\*") do (
     del /s /f /q "%%i\cache2\*.*" >nul 2>&1
-    del /s /f /q "%%i\thumbnails\*.*" >nul 2>&1
     del /s /f /q "%%i\cookies.sqlite" >nul 2>&1
-    del /s /f /q "%%i\places.sqlite" >nul 2>&1
 )
-echo           Firefox Cache + History cleaned.
+echo           Firefox cleaned.
 echo.
-echo   [OK] All browsers cleaned.
+echo   [OK] Browser cleanup finished.
 echo.
 timeout /t 1 >nul
 
-:: ==============================================
-:: 5. FINAL SPACE CHECK
-:: ==============================================
+::---------------------------------------------
+:: 5. Final Space Check
+::---------------------------------------------
 echo   [5/5] Checking free space after cleanup...
+for /f "tokens=3" %%a in ('dir /-c C:\ ^| find "bytes free"') do set FreeAfter=%%a
 echo.
-for /f "tokens=2 delims==" %%a in ('wmic logicaldisk where "DeviceID='C:'" get FreeSpace /value') do set FreeAfter=%%a
-set /a FreeAfterMB=%FreeAfter:~0,-6%
-set /a FreedMB=!FreeAfterMB! - !FreeBeforeMB!
-
-echo   ==============================================================
-echo   CLEANUP SUMMARY
-echo   ==============================================================
-echo   Free Space before : !FreeBeforeMB! MB
-echo   Free Space after  : !FreeAfterMB! MB
-echo   Space Freed       : !FreedMB! MB
-echo   ==============================================================
+echo   ======================================================
+echo                     CLEANUP SUMMARY
+echo   ======================================================
+echo   Free Space before : %FreeBefore% bytes
+echo   Free Space after  : %FreeAfter% bytes
+echo   ======================================================
 echo.
-
-if !FreeAfterMB! LSS 5000 (
-    color 0C
-    echo   [WARNING] Low free space on C: drive ^(!FreeAfterMB! MB^)
-    echo   Recommendation: Free more space for better performance.
-) else (
-    color 0A
-    echo   [SUCCESS] Sufficient free space available on C: drive.
-    echo   Your system is optimized for better performance.
-)
-
-echo.
-echo   ==============================================================
-echo   SW CLEANUP completed successfully!
-echo   ==============================================================
+echo   [SUCCESS] SW CLEANUP completed successfully!
 echo.
 echo   Press any key to exit...
 pause >nul
